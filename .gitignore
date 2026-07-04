@@ -211,6 +211,9 @@ tempCodeRunnerFile.py
 # PyPI configuration file
 .pypirc
 
+# Local mcp-runner build
+/mcp-runner/mcp-runner
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

@@ -1,0 +1,28 @@
+{
+  "servers": {
+    "python-ssh-mcp": {
+      "image": "mcp-server:latest",
+      "mounts": [
+        {
+          "source": "~/.config/python-ssh-mcp/config.json",
+          "target": "/root/.config/python-ssh-mcp/config.json",
+          "read_only": true
+        },
+        {
+          "source": "~/.ssh",
+          "target": "/root/.ssh",
+          "read_only": true
+        }
+      ]
+    },
+    "postgres-mcp": {
+      "image": "mcp-server:latest",
+      "pass_env": [
+        "DATABASE_URI"
+      ],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
