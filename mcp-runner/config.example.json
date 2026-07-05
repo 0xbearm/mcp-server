@@ -15,17 +15,14 @@
       ]
     },
     "postgres-mcp": {
-      "pass_env": [
-        "DATABASE_URI"
-      ],
+      "args": ["--access-mode=restricted"],
       "env": {
-        "LOG_LEVEL": "info"
+        "LOG_LEVEL": "info",
+        "DATABASE_URI": "postgresql://postgres:password@localhost:5432/somedatabase"
       }
     },
     "ghidra-mcp": {
-      "docker_args": [
-        "--network=host"
-      ]
+      "docker_args": ["--network=host"]
     }
   }
 }
