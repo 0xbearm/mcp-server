@@ -10,12 +10,8 @@ configuration.
 - `python-ssh-mcp`: manages SSH sessions and executes commands on configured
   hosts.
 - `postgres-mcp`: the upstream PostgreSQL MCP server, launched with
-  `--access-mode=unrestricted`.
 - `ghidra-mcp`: bridges MCP stdio to the GhidraMCP plugin running in a host
   Ghidra instance.
-
-The PostgreSQL server has unrestricted database access. Only expose it to
-trusted MCP clients and use a database role with appropriate permissions.
 
 ## Requirements
 
