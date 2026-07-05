@@ -13,15 +13,16 @@ import (
 const (
 	configEnvironmentVariable = "MCP_RUNNER_CONFIG"
 	defaultConfigName         = "config.json"
+	defaultImage              = "mcp-server:latest"
 )
 
 type Config struct {
 	Docker  string            `json:"docker"`
+	Image   string            `json:"image"`
 	Servers map[string]Server `json:"servers"`
 }
 
 type Server struct {
-	Image      string            `json:"image"`
 	Mounts     []Mount           `json:"mounts"`
 	PassEnv    []string          `json:"pass_env"`
 	Env        map[string]string `json:"env"`
@@ -69,15 +70,18 @@ func loadConfig(filename string) (Config, error) {
 	if config.Docker == "" {
 		config.Docker = "docker"
 	}
+	if config.Image == "" {
+		config.Image = defaultImage
+	}
+	if strings.TrimSpace(config.Image) == "" {
+		return Config{}, errors.New("image cannot be empty")
+	}
 	if len(config.Servers) == 0 {
 		return Config{}, errors.New("config must define at least one server")
 	}
-	for name, server := range config.Servers {
+	for name := range config.Servers {
 		if strings.TrimSpace(name) == "" {
 			return Config{}, errors.New("config contains an empty server name")
-		}
-		if strings.TrimSpace(server.Image) == "" {
-			return Config{}, fmt.Errorf("server %q must define an image", name)
 		}
 	}
 	return config, nil

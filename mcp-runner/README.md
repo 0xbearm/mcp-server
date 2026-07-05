@@ -57,7 +57,6 @@ The example contains:
 {
   "servers": {
     "python-ssh-mcp": {
-      "image": "mcp-server:latest",
       "mounts": [
         {
           "source": "~/.config/python-ssh-mcp/config.json",
@@ -72,13 +71,17 @@ The example contains:
       ]
     },
     "postgres-mcp": {
-      "image": "mcp-server:latest",
       "pass_env": [
         "DATABASE_URI"
       ],
       "env": {
         "LOG_LEVEL": "info"
       }
+    },
+    "ghidra-mcp": {
+      "docker_args": [
+        "--network=host"
+      ]
     }
   }
 }
@@ -93,22 +96,39 @@ mcp-runner --config /path/to/config.json list
 
 The command-line option takes precedence over `MCP_RUNNER_CONFIG`.
 
+All server definitions use the same image. The default is
+`mcp-server:latest`, so the example omits it. To use another tag or registry,
+set `image` once at the top level:
+
+```json
+{
+  "image": "registry.example/mcp-server:v1",
+  "servers": {
+    "ghidra-mcp": {
+      "docker_args": ["--network=host"]
+    }
+  }
+}
+```
+
 ### Configuration fields
 
 Top-level fields:
 
 - `docker`: optional Docker executable; defaults to `docker`.
+- `image`: optional Docker image containing all MCP servers; defaults to
+  `mcp-server:latest`.
 - `servers`: required object mapping MCP server names to definitions.
 
 Server fields:
 
-- `image`: required Docker image.
 - `mounts`: optional bind mounts.
 - `pass_env`: optional names of variables forwarded from the runner's
   environment.
 - `env`: optional literal environment values.
 - `docker_args`: optional Docker arguments inserted before mounts and the
-  image.
+  image. Container names cannot be set here because the runner generates a
+  unique name for each launch.
 - `args`: optional arguments appended after the MCP server selector.
 
 Mount fields:
@@ -119,6 +139,18 @@ Mount fields:
 
 The runner validates bind-mount sources before starting Docker and rejects TTY
 allocation because a TTY can corrupt MCP stdio traffic.
+
+Each container is named after its selected server with a random hexadecimal
+suffix, such as `ghidra-mcp-a1b2c3d4e5f60718`. This keeps container names
+recognizable while allowing multiple instances of the same server to run.
+
+The example gives `ghidra-mcp` access to the host network so its connection to
+`127.0.0.1:8089` reaches the Ghidra plugin running on the host. Start the
+GhidraMCP server in Ghidra before launching the runner:
+
+```sh
+./mcp-runner ghidra-mcp
+```
 
 ### Environment variables
 
@@ -176,6 +208,15 @@ Inspect a generated Docker command:
 ./mcp-runner --dry-run python-ssh-mcp
 ```
 
+Print the generated command to stderr and then start the server:
+
+```sh
+./mcp-runner --debug python-ssh-mcp
+```
+
+Debug output goes to stderr so it does not interfere with the MCP stdio
+transport.
+
 Start a server:
 
 ```sh
@@ -187,7 +228,7 @@ The selected configuration key is also passed to the image entrypoint. For
 example, `mcp-runner python-ssh-mcp` generates the equivalent of:
 
 ```sh
-docker run --rm -i [configured options] mcp-server:latest python-ssh-mcp
+docker run --rm -i --name python-ssh-mcp-[random] [configured options] mcp-server:latest python-ssh-mcp
 ```
 
 Additional arguments follow the selector:

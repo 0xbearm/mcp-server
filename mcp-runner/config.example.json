@@ -1,7 +1,6 @@
 {
   "servers": {
     "python-ssh-mcp": {
-      "image": "mcp-server:latest",
       "mounts": [
         {
           "source": "~/.config/python-ssh-mcp/config.json",
@@ -16,13 +15,17 @@
       ]
     },
     "postgres-mcp": {
-      "image": "mcp-server:latest",
       "pass_env": [
         "DATABASE_URI"
       ],
       "env": {
         "LOG_LEVEL": "info"
       }
+    },
+    "ghidra-mcp": {
+      "docker_args": [
+        "--network=host"
+      ]
     }
   }
 }

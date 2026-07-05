@@ -18,9 +18,7 @@ func TestLoadConfig(t *testing.T) {
 	filename := filepath.Join(t.TempDir(), "config.json")
 	content := `{
 		"servers": {
-			"python-ssh-mcp": {
-				"image": "mcp-server:latest"
-			}
+			"python-ssh-mcp": {}
 		}
 	}`
 	writeTestFile(t, filename, content)
@@ -32,8 +30,11 @@ func TestLoadConfig(t *testing.T) {
 	if config.Docker != "docker" {
 		t.Fatalf("Docker = %q, want docker", config.Docker)
 	}
-	if config.Servers["python-ssh-mcp"].Image != "mcp-server:latest" {
-		t.Fatal("server image was not decoded")
+	if config.Image != defaultImage {
+		t.Fatalf("Image = %q, want %q", config.Image, defaultImage)
+	}
+	if _, ok := config.Servers["python-ssh-mcp"]; !ok {
+		t.Fatal("server was not decoded")
 	}
 }
 
@@ -42,9 +43,7 @@ func TestLoadConfigRejectsUnknownFields(t *testing.T) {
 	content := `{
 		"unknown": true,
 		"servers": {
-			"python-ssh-mcp": {
-				"image": "mcp-server:latest"
-			}
+			"python-ssh-mcp": {}
 		}
 	}`
 	writeTestFile(t, filename, content)
@@ -52,5 +51,23 @@ func TestLoadConfigRejectsUnknownFields(t *testing.T) {
 	_, err := loadConfig(filename)
 	if err == nil || !strings.Contains(err.Error(), "unknown field") {
 		t.Fatalf("expected unknown field error, got %v", err)
+	}
+}
+
+func TestLoadConfigUsesTopLevelImage(t *testing.T) {
+	filename := filepath.Join(t.TempDir(), "config.json")
+	writeTestFile(t, filename, `{
+		"image": "registry.example/mcp-server:test",
+		"servers": {
+			"example": {}
+		}
+	}`)
+
+	config, err := loadConfig(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := config.Image, "registry.example/mcp-server:test"; got != want {
+		t.Fatalf("Image = %q, want %q", got, want)
 	}
 }

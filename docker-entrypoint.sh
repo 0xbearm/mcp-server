@@ -16,6 +16,10 @@ case "$server" in
     postgres-mcp)
         exec uv run postgres-mcp --access-mode=unrestricted "$@"
         ;;
+    ghidra-mcp)
+        cd /mcp
+        exec uv run bridge_mcp_ghidra.py "$@"
+        ;;
     *)
         echo "Unknown MCP server: $server" >&2
         exit 2

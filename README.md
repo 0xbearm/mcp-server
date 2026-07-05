@@ -11,6 +11,8 @@ configuration.
   hosts.
 - `postgres-mcp`: the upstream PostgreSQL MCP server, launched with
   `--access-mode=unrestricted`.
+- `ghidra-mcp`: bridges MCP stdio to the GhidraMCP plugin running in a host
+  Ghidra instance.
 
 The PostgreSQL server has unrestricted database access. Only expose it to
 trusted MCP clients and use a database role with appropriate permissions.
@@ -81,6 +83,12 @@ docker run --rm -i \
 docker run --rm -i \
   --env DATABASE_URI \
   mcp-server:latest postgres-mcp
+```
+
+```sh
+docker run --rm -i \
+  --network=host \
+  mcp-server:latest ghidra-mcp
 ```
 
 Do not add `-t`. A pseudo-terminal can interfere with the MCP stdio protocol.

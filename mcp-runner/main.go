@@ -16,6 +16,7 @@ const usageText = `Usage:
 
 Options:
   --config PATH  Configuration file (default: $MCP_RUNNER_CONFIG or the user config directory)
+  --debug        Print the Docker command to stderr before running it
   --dry-run      Print the Docker command instead of running it
 `
 
@@ -38,8 +39,10 @@ func run(arguments []string, stdout, stderr io.Writer) error {
 	}
 
 	var configOverride string
+	var debug bool
 	var dryRun bool
 	flags.StringVar(&configOverride, "config", "", "configuration file")
+	flags.BoolVar(&debug, "debug", false, "print the Docker command to stderr before running it")
 	flags.BoolVar(&dryRun, "dry-run", false, "print the Docker command")
 
 	if err := flags.Parse(arguments); err != nil {
@@ -90,7 +93,7 @@ func run(arguments []string, stdout, stderr io.Writer) error {
 		return fmt.Errorf("server %q is not configured", serverName)
 	}
 
-	dockerArgs, err := buildDockerArgs(serverName, server, containerArgs)
+	dockerArgs, err := buildDockerArgs(serverName, config.Image, server, containerArgs)
 	if err != nil {
 		return fmt.Errorf("server %q: %w", serverName, err)
 	}
@@ -102,6 +105,9 @@ func run(arguments []string, stdout, stderr io.Writer) error {
 
 	if strings.TrimSpace(config.Docker) == "" {
 		return errors.New("Docker executable cannot be empty")
+	}
+	if debug {
+		fmt.Fprintln(stderr, formatCommand(config.Docker, dockerArgs))
 	}
 	return executeDocker(config.Docker, dockerArgs)
 }

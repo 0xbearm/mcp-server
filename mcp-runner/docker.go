@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -13,12 +15,19 @@ import (
 
 var environmentName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
-func buildDockerArgs(serverName string, server Server, runtimeArgs []string) ([]string, error) {
-	args := []string{"run", "--rm", "-i"}
+func buildDockerArgs(serverName, image string, server Server, runtimeArgs []string) ([]string, error) {
+	containerName, err := buildContainerName(serverName)
+	if err != nil {
+		return nil, err
+	}
+	args := []string{"run", "--rm", "-i", "--name", containerName}
 
 	for _, argument := range server.DockerArgs {
 		if argument == "-t" || argument == "--tty" || strings.HasPrefix(argument, "--tty=") {
 			return nil, errors.New("TTY allocation is incompatible with MCP stdio")
+		}
+		if argument == "--name" || strings.HasPrefix(argument, "--name=") {
+			return nil, errors.New("docker_args cannot override the generated container name")
 		}
 		if argument == "--" {
 			return nil, errors.New("docker_args cannot contain --")
@@ -71,11 +80,19 @@ func buildDockerArgs(serverName string, server Server, runtimeArgs []string) ([]
 		args = append(args, "--env", name)
 	}
 
-	args = append(args, server.Image)
+	args = append(args, image)
 	args = append(args, serverName)
 	args = append(args, server.Args...)
 	args = append(args, runtimeArgs...)
 	return args, nil
+}
+
+func buildContainerName(serverName string) (string, error) {
+	randomBytes := make([]byte, 8)
+	if _, err := rand.Read(randomBytes); err != nil {
+		return "", fmt.Errorf("generate container name: %w", err)
+	}
+	return serverName + "-" + hex.EncodeToString(randomBytes), nil
 }
 
 func buildMountArgument(mount Mount) (string, error) {

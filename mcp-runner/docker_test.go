@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -16,7 +17,7 @@ func TestBuildDockerArgs(t *testing.T) {
 	t.Setenv("SSH_PASSWORD", "secret")
 
 	server := Server{
-		Image: "mcp-server:latest",
+		DockerArgs: []string{"--network=host"},
 		Mounts: []Mount{{
 			Source:   configFile,
 			Target:   "/root/.config/python-ssh-mcp/config.json",
@@ -27,12 +28,18 @@ func TestBuildDockerArgs(t *testing.T) {
 		Args:    []string{"--configured"},
 	}
 
-	got, err := buildDockerArgs("python-ssh-mcp", server, []string{"--verbose"})
+	got, err := buildDockerArgs("python-ssh-mcp", defaultImage, server, []string{"--verbose"})
 	if err != nil {
 		t.Fatal(err)
 	}
+	if matched := regexp.MustCompile(`^python-ssh-mcp-[0-9a-f]{16}$`).MatchString(got[4]); !matched {
+		t.Fatalf("container name = %q, want python-ssh-mcp with a random hexadecimal suffix", got[4])
+	}
+	got[4] = "<container-name>"
 	want := []string{
 		"run", "--rm", "-i",
+		"--name", "<container-name>",
+		"--network=host",
 		"--mount", "type=bind,src=" + configFile + ",dst=/root/.config/python-ssh-mcp/config.json,readonly",
 		"--env", "LOG_LEVEL=info",
 		"--env", "SSH_PASSWORD",
@@ -47,12 +54,20 @@ func TestBuildDockerArgs(t *testing.T) {
 }
 
 func TestBuildDockerArgsRejectsTTY(t *testing.T) {
-	_, err := buildDockerArgs("example", Server{
-		Image:      "example",
+	_, err := buildDockerArgs("example", defaultImage, Server{
 		DockerArgs: []string{"--tty"},
 	}, nil)
 	if err == nil || !strings.Contains(err.Error(), "TTY") {
 		t.Fatalf("expected TTY error, got %v", err)
+	}
+}
+
+func TestBuildDockerArgsRejectsConfiguredContainerName(t *testing.T) {
+	_, err := buildDockerArgs("example", defaultImage, Server{
+		DockerArgs: []string{"--name=shared"},
+	}, nil)
+	if err == nil || !strings.Contains(err.Error(), "container name") {
+		t.Fatalf("expected container name error, got %v", err)
 	}
 }
 
@@ -63,8 +78,7 @@ func TestBuildDockerArgsRequiresPassedEnvironment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := buildDockerArgs("example", Server{
-		Image:   "example",
+	_, err := buildDockerArgs("example", defaultImage, Server{
 		PassEnv: []string{name},
 	}, nil)
 	if err == nil || !strings.Contains(err.Error(), "is not set") {
