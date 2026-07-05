@@ -71,11 +71,9 @@ The example contains:
       ]
     },
     "postgres-mcp": {
-      "pass_env": [
-        "DATABASE_URI"
-      ],
       "env": {
-        "LOG_LEVEL": "info"
+        "LOG_LEVEL": "info",
+        "DATABASE_URI": "postgresql://postgres:password@localhost:5432/somedatabase"
       }
     },
     "ghidra-mcp": {
