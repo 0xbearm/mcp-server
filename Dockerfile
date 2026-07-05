@@ -19,9 +19,6 @@ WORKDIR /mcp
 COPY docker-entrypoint.sh .
 RUN chmod +x /mcp/docker-entrypoint.sh
 
-WORKDIR /mcp
-RUN curl https://github.com/bethington/ghidra-mcp/releases/download/v5.14.2/bridge_mcp_ghidra.py -o bridge_mcp_ghidra.py
-
 COPY mcp .
 
 WORKDIR /mcp/python-ssh-mcp
