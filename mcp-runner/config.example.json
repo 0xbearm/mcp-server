@@ -1,0 +1,28 @@
+{
+  "servers": {
+    "python-ssh-mcp": {
+      "mounts": [
+        {
+          "source": "~/.config/python-ssh-mcp/config.json",
+          "target": "/root/.config/python-ssh-mcp/config.json",
+          "read_only": true
+        },
+        {
+          "source": "~/.ssh",
+          "target": "/root/.ssh",
+          "read_only": true
+        }
+      ]
+    },
+    "postgres-mcp": {
+      "args": ["--access-mode=restricted"],
+      "env": {
+        "LOG_LEVEL": "info",
+        "DATABASE_URI": "postgresql://postgres:password@localhost:5432/somedatabase"
+      }
+    },
+    "ghidra-mcp": {
+      "docker_args": ["--network=host"]
+    }
+  }
+}
